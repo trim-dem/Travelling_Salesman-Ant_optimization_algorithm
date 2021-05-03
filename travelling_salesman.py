@@ -53,8 +53,8 @@ class Ant:
         dest_item = random.choices(population=list(desiderabilities.items()), weights=desiderabilities_pdf, k=1)
         dest_vertex = dest_item[0][1]
         chosen_des = dest_item[0][0]
-        print("--------")
-        print(dest_vertex)
+        # print("--------")
+        # print(dest_vertex)
         edge = Edge(self.curr_vertex, dest_vertex)
         
         #flag the choosen vertex as visited and update current position
@@ -115,7 +115,6 @@ class Graph:
         self.vertices = []
         self.edges = []
 
-
     def create_graph(self):
         random.seed(1)
         for i in range(self.n):
@@ -133,7 +132,7 @@ class Graph:
     def set_edges(self, edges):
         self.edges = []
         self.edges = edges
-        self.edges.append(self.find_remaining_edge())
+        # self.edges.append(self.find_remaining_edge())
     
     def find_remaining_edge(self):
         vertex_edges_counter = {}
@@ -153,15 +152,6 @@ class Graph:
                 remaining_vertices.append(vertex)
         
         return Edge(remaining_vertices[0], remaining_vertices[1])
- 
-
-    '''
-    def get_vertex_by_id(self, vertex_id):
-        for vertex in self.vertices:
-            print(str(vertex_id) + " - " + str(vertex))
-            if id(vertex) == vertex_id:
-                return vertex
-    '''
 
     def print_graph(self):
 
@@ -195,6 +185,8 @@ class Ant_opt_alg:
         self.evaporation_intensity = evaporation_intensity
         self.edges_pheromone = {}
         self.create_ants(self.ants_n)
+
+        self.pheromone_matrix = {}
         
     def create_ants(self, ants_n):
         self.ants = []
@@ -228,17 +220,69 @@ class Ant_opt_alg:
                 else:
                     self.compute_step(True)
 
+            '''
             chosen_edges = Counter(self.edges_pheromone).most_common(self.locations_num-1)
             chosen_edges = [key for key, val in chosen_edges]
+            '''
 
+            chosen_edges = self.get_path(self.edges_pheromone)
             self.graph.set_edges(chosen_edges)
             self.graph.print_graph()
 
             self.create_ants(self.ants_n)
 
+
+    ## Auxiliary function
+    def edges_to_matrix(self, edges):
+        print(len(edges))
+        pheromone_matrix = {}
+        for edge, pheromone in edges.items():
+            if edge.u not in pheromone_matrix:
+                pheromone_matrix[edge.u] = {}
+                pheromone_matrix[edge.u][edge.v] = pheromone
+            else:
+                pheromone_matrix[edge.u][edge.v] = pheromone
+        return pheromone_matrix
+        
+    ## Auxiliary function
+    def get_path(self, edges):
+        pheromone_matrix = self.edges_to_matrix(edges)
+        self.print_edges_matrix(pheromone_matrix)
+        path = []
+        visited = []
+        for u, edges in pheromone_matrix.items():
+            done = False
+            temp_edges = edges.copy()
+            while done != True:
+                try:
+                    v = max(temp_edges, key=temp_edges.get)  
+                    if v not in visited:
+                        visited.append(v)
+                        path.append(Edge(u, v))
+                        done = True
+                    else:
+                        temp_edges.pop(v)
+                except ValueError:
+                    done = True
+        return path
+
+    ## Auxiliary function
+    def print_edges_matrix(self, matrix):
+        i = 0
+        for u, edges in matrix.items():
+            pheromone_values = ""
+            for v, pheromone in edges.items():
+                print("temp")
+                pheromone_values = pheromone_values + "\t" + str(pheromone)
+            print(str(i) + ":\t" + pheromone_values)
+            i = i + 1
+        print("\n")
+
+
 if __name__ == '__main__':
     graph = Graph(10, 0, 100, 0, 100)
     graph.create_graph()
     graph.print_graph()
+    # iterations, graph, ants_n, dst_power, pheromone_power, evaporation_intensity
     alg = Ant_opt_alg(10, graph, 1, 1, 1, 0.5)
     alg.exec()
